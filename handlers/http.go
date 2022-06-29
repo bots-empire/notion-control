@@ -25,7 +25,7 @@ func StartListeningRequests(bot *tgbotapi.BotAPI, handlers *Handlers) {
 		req.Header.Add("Accept", "application/json")
 		req.Header.Add("Notion-Version", "2022-02-22")
 		req.Header.Add("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer "+"secret_MEJrBe8hqra8kcYrhuxo5K5nvlCOv2vEKhK4Hq2XhQN")
+		req.Header.Set("Authorization", "Bearer "+config.Secret)
 
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
