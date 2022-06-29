@@ -3,7 +3,9 @@ package main
 import (
 	"github.com/BlackRRR/notion-control/handlers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,8 +14,8 @@ import (
 func main() {
 	bot := startBot()
 	handler := handlers.InitHandler()
-	StartListenNotionReq(bot, handler)
-
+	go startPrometheusHandler()
+	go handlers.StartListeningRequests(bot, handler)
 	sig := <-subscribeToSystemSignals()
 
 	log.Printf("shutdown all process on '%s' system signal\n", sig.String())
@@ -35,8 +37,13 @@ func startBot() *tgbotapi.BotAPI {
 	return bot
 }
 
-func StartListenNotionReq(bot *tgbotapi.BotAPI, handler *handlers.Handlers) {
-	go handlers.StartListeningRequests(bot, handler)
+func startPrometheusHandler() {
+	http.Handle("/metrics", promhttp.Handler())
+	log.Printf("Metrics can be read from %s port", "7011")
+	metricErr := http.ListenAndServe(":7011", nil)
+	if metricErr != nil {
+		log.Fatalf("metrics stoped by metricErr: %s\n", metricErr.Error())
+	}
 }
 
 func subscribeToSystemSignals() chan os.Signal {
