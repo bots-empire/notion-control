@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/BlackRRR/notion-control/config"
 	"github.com/BlackRRR/notion-control/model"
 	"github.com/BlackRRR/notion-control/msgs"
@@ -15,7 +16,8 @@ import (
 var Len int
 
 func StartListeningRequests(bot *tgbotapi.BotAPI, handlers *Handlers) {
-	for {
+	var count int64
+	for range time.Tick(time.Second * 15) {
 		url := config.Url
 
 		req, err := http.NewRequest("POST", url, nil)
@@ -36,8 +38,9 @@ func StartListeningRequests(bot *tgbotapi.BotAPI, handlers *Handlers) {
 		CheckResBodyAndSend(bot, res, handlers)
 
 		InitHandler()
-
-		time.Sleep(time.Second * 15)
+		count++
+		fmt.Println("number of req", count)
+		model.TotalCountReq.WithLabelValues("notion-req").Inc()
 	}
 }
 
@@ -51,11 +54,7 @@ func CheckResBodyAndSend(bot *tgbotapi.BotAPI, res *http.Response, handlers *Han
 		log.Println(err)
 	}
 
-	if Len == len(body) {
-		return
-	}
-
-	if Len > len(body) {
+	if Len == len(body) || Len > len(body) {
 		return
 	}
 
@@ -66,9 +65,11 @@ func CheckResBodyAndSend(bot *tgbotapi.BotAPI, res *http.Response, handlers *Han
 	Text = NoStatus(handlers, Text)
 
 	if Text != "" {
-		msg := msgs.CreateNewTGMessage(Text)
-		msgs.BotSendMsg(bot, msg)
-		model.TotalCountSend.WithLabelValues("notion").Inc()
+		for _, value := range model.Admins {
+			msg := msgs.CreateNewTGMessage(Text, value)
+			msgs.BotSendMsg(bot, msg)
+			model.TotalCountSend.WithLabelValues("notion").Inc()
+		}
 	}
 
 	Text = ""

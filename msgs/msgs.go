@@ -5,10 +5,10 @@ import (
 	"log"
 )
 
-func CreateNewTGMessage(text string) tgbotapi.Chattable {
+func CreateNewTGMessage(text string, chatID int64) tgbotapi.Chattable {
 	message := tgbotapi.MessageConfig{
 		BaseChat: tgbotapi.BaseChat{
-			ChatID: 872383555,
+			ChatID: chatID,
 		},
 		Text: text,
 	}
