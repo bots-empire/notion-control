@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/BlackRRR/notion-control/config"
 	"github.com/BlackRRR/notion-control/model"
 	"github.com/BlackRRR/notion-control/msgs"
@@ -16,7 +15,6 @@ import (
 var Len int
 
 func StartListeningRequests(bot *tgbotapi.BotAPI, handlers *Handlers) {
-	var count int64
 	for range time.Tick(time.Second * 15) {
 		url := config.Url
 
@@ -38,8 +36,6 @@ func StartListeningRequests(bot *tgbotapi.BotAPI, handlers *Handlers) {
 		CheckResBodyAndSend(bot, res, handlers)
 
 		InitHandler()
-		count++
-		fmt.Println("number of req", count)
 		model.TotalCountReq.WithLabelValues("notion-req").Inc()
 	}
 }
@@ -54,7 +50,7 @@ func CheckResBodyAndSend(bot *tgbotapi.BotAPI, res *http.Response, handlers *Han
 		log.Println(err)
 	}
 
-	if Len == len(body) || Len > len(body) {
+	if Len == len(body) {
 		return
 	}
 
@@ -65,8 +61,8 @@ func CheckResBodyAndSend(bot *tgbotapi.BotAPI, res *http.Response, handlers *Han
 	Text = NoStatus(handlers, Text)
 
 	if Text != "" {
-		for _, value := range model.Admins {
-			msg := msgs.CreateNewTGMessage(Text, value)
+		for id := range model.AdminSettings.AdminID {
+			msg := msgs.CreateNewTGMessage(Text, id)
 			msgs.BotSendMsg(bot, msg)
 			model.TotalCountSend.WithLabelValues("notion").Inc()
 		}
@@ -80,6 +76,8 @@ func NewMsgForATask(i int, handlers *Handlers, status string) string {
 	Text = "New Task was added \n"
 
 	Text = Text + "Status = " + status + "\n"
+
+	Text = Text + "Description = " + handlers.Results.Page[i].Properties.Name.Title[i].PlainText + "\n"
 
 	Text = Text + "URL = " + handlers.Results.Page[i].Url
 

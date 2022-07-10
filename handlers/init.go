@@ -1,6 +1,8 @@
 package handlers
 
-import "github.com/BlackRRR/notion-control/model"
+import (
+	"github.com/BlackRRR/notion-control/model"
+)
 
 type Handlers struct {
 	Page     *model.Page
